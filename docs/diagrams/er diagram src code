@@ -1,0 +1,60 @@
+Table users {
+  id int [pk, increment]
+  full_name varchar
+  email varchar
+  password varchar
+  role varchar
+}
+
+Table patients {
+  id int [pk, increment]
+  user_id int
+  phone varchar
+  address varchar
+}
+
+Table insurance_policies {
+  id int [pk, increment]
+  policy_number varchar
+  provider_name varchar
+  coverage_amount decimal
+}
+
+Table claims {
+  id int [pk, increment]
+  patient_id int
+  policy_id int
+  claim_amount decimal
+  claim_date date
+  status varchar
+}
+
+Table claim_documents {
+  id int [pk, increment]
+  claim_id int
+  document_name varchar
+  file_path varchar
+}
+
+Table claim_status_history {
+  id int [pk, increment]
+  claim_id int
+  updated_by int
+  status varchar
+  updated_at datetime
+}
+
+Table notifications {
+  id int [pk, increment]
+  user_id int
+  message varchar
+  created_at datetime
+}
+
+Ref: patients.user_id > users.id
+Ref: claims.patient_id > patients.id
+Ref: claims.policy_id > insurance_policies.id
+Ref: claim_documents.claim_id > claims.id
+Ref: claim_status_history.claim_id > claims.id
+Ref: claim_status_history.updated_by > users.id
+Ref: notifications.user_id > users.id
