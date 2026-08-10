@@ -1,8 +1,17 @@
 from fastapi import FastAPI
-from pydantic import BaseModel
-import sqlite3
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+from pydantic import BaseModel
+import sqlite3
 
 conn = sqlite3.connect("health_insurance.db", check_same_thread=False)
 cursor = conn.cursor()
@@ -98,3 +107,22 @@ def update_claim_status(claim_id: int, data: StatusUpdate):
     )
     conn.commit()
     return {"message": "Claim status updated successfully"}
+@app.get("/claims/{claim_id}")
+def get_claim_by_id(claim_id: int):
+    cursor.execute(
+        "SELECT * FROM claims WHERE id=?",
+        (claim_id,)
+    )
+    claim = cursor.fetchone()
+
+    if claim:
+        return {"claim": claim}
+    return {"message": "Claim not found"}
+@app.delete("/claims/{claim_id}")
+def delete_claim(claim_id: int):
+    cursor.execute(
+        "DELETE FROM claims WHERE id=?",
+        (claim_id,)
+    )
+    conn.commit()
+    return {"message": "Claim deleted successfully"}
