@@ -1,17 +1,17 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+import sqlite3
 
 app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=["http://localhost:5173", "http://localhost:5176"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-from pydantic import BaseModel
-import sqlite3
 
 conn = sqlite3.connect("health_insurance.db", check_same_thread=False)
 cursor = conn.cursor()
@@ -42,18 +42,10 @@ class UserRegister(BaseModel):
     email: str
     password: str
 
-class LoginData(BaseModel):
-    email: str
-    password: str
-
 class ClaimData(BaseModel):
     patient_name: str
     hospital_name: str
     claim_amount: float
-
-@app.get("/")
-def home():
-    return {"message": "Health Insurance Claim Portal API is running"}
 
 @app.post("/register")
 def register(user: UserRegister):
@@ -64,24 +56,6 @@ def register(user: UserRegister):
     conn.commit()
     return {"message": "User registered successfully"}
 
-@app.get("/users")
-def get_users():
-    cursor.execute("SELECT id, name, email FROM users")
-    users = cursor.fetchall()
-    return {"users": users}
-
-@app.post("/login")
-def login(data: LoginData):
-    cursor.execute(
-        "SELECT * FROM users WHERE email=? AND password=?",
-        (data.email, data.password)
-    )
-    user = cursor.fetchone()
-
-    if user:
-        return {"message": "Login successful"}
-    return {"message": "Invalid email or password"}
-
 @app.post("/claims")
 def create_claim(claim: ClaimData):
     cursor.execute(
@@ -90,39 +64,3 @@ def create_claim(claim: ClaimData):
     )
     conn.commit()
     return {"message": "Claim submitted successfully"}
-
-@app.get("/claims")
-def get_claims():
-    cursor.execute("SELECT * FROM claims")
-    claims = cursor.fetchall()
-    return {"claims": claims}
-class StatusUpdate(BaseModel):
-    status: str
-
-@app.put("/claims/{claim_id}")
-def update_claim_status(claim_id: int, data: StatusUpdate):
-    cursor.execute(
-        "UPDATE claims SET status=? WHERE id=?",
-        (data.status, claim_id)
-    )
-    conn.commit()
-    return {"message": "Claim status updated successfully"}
-@app.get("/claims/{claim_id}")
-def get_claim_by_id(claim_id: int):
-    cursor.execute(
-        "SELECT * FROM claims WHERE id=?",
-        (claim_id,)
-    )
-    claim = cursor.fetchone()
-
-    if claim:
-        return {"claim": claim}
-    return {"message": "Claim not found"}
-@app.delete("/claims/{claim_id}")
-def delete_claim(claim_id: int):
-    cursor.execute(
-        "DELETE FROM claims WHERE id=?",
-        (claim_id,)
-    )
-    conn.commit()
-    return {"message": "Claim deleted successfully"}
